@@ -1,26 +1,31 @@
 using Microsoft.AspNetCore.Mvc;
 using NICETaskDafna.Api.Contracts;
+using NICETaskDafna.Api.Matching;
 
 namespace NICETaskDafna.Api.Controllers;
 
 [ApiController]
-// The assignment requires the endpoint path to be exactly "/suggestTask".
 [Route("/suggestTask")]
 public class SuggestTaskController : ControllerBase
 {
-    // POST /suggestTask
-    // Receives a JSON body that matches SuggestTaskRequest (utterance, userId, sessionId, timestamp)
-    // and returns a JSON response (task, timestamp).
+    private readonly ITaskMatcher _matcher;
+
+    public SuggestTaskController(ITaskMatcher matcher)
+    {
+        _matcher = matcher;
+    }
+
     [HttpPost]
     public ActionResult<SuggestTaskResponse> Post([FromBody] SuggestTaskRequest request)
     {
-        // Phase 1: return a stub so we can verify end-to-end flow in Swagger/Postman.
-        // Next steps will add: validation, logging, and real keyword matching.
+        // Use the matcher to find the task
+        var task = _matcher.Match(request.Utterance);
+
         var response = new SuggestTaskResponse(
-            Task: "StubTask",
+            Task: task,
             Timestamp: DateTime.UtcNow
         );
 
-        return Ok(response); // HTTP 200 + JSON
+        return Ok(response);
     }
 }

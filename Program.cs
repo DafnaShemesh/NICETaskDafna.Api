@@ -1,10 +1,10 @@
+using NICETaskDafna.Api.Matching;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Register framework services.
-// Add support for MVC-style controllers (so [ApiController] classes are discovered).
+//Register services 
 builder.Services.AddControllers();
-
-// OpenAPI/Swagger for easy testing and documentation.
+builder.Services.AddScoped<ITaskMatcher, KeywordTaskMatcher>(); // Register our task matcher service
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
