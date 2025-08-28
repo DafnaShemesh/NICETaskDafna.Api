@@ -1,8 +1,12 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NICETaskDafna.Api", "NICETaskDafna.Api.csproj", "{3EA46503-0748-CA81-0E8B-2C14305650B7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FD8527A4-A83C-4D77-B57E-04428AA83389}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NICETaskDafna.Api.Tests", "tests\NICETaskDafna.Api.Tests\NICETaskDafna.Api.Tests.csproj", "{6771184A-74B6-4A93-88EA-5CD1372CB1FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,11 +18,18 @@ Global
 		{3EA46503-0748-CA81-0E8B-2C14305650B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3EA46503-0748-CA81-0E8B-2C14305650B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3EA46503-0748-CA81-0E8B-2C14305650B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6771184A-74B6-4A93-88EA-5CD1372CB1FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6771184A-74B6-4A93-88EA-5CD1372CB1FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6771184A-74B6-4A93-88EA-5CD1372CB1FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6771184A-74B6-4A93-88EA-5CD1372CB1FB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A4A671A6-C0A2-41FB-BD16-1B802ED2D457}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6771184A-74B6-4A93-88EA-5CD1372CB1FB} = {FD8527A4-A83C-4D77-B57E-04428AA83389}
 	EndGlobalSection
 EndGlobal
