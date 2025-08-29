@@ -15,19 +15,16 @@ using NICETaskDafna.Api.Matching;
 
 namespace NICETaskDafna.Api.Tests.Integration;
 
-/// <summary>
-/// WebApplicationFactory that boots the real pipeline in-memory,
+/// Test the real pipeline in-memory,
 /// but replaces ILexiconService with a deterministic test double,
 /// so integration tests are stable (no random failures/retries).
 /// Also enables us to assert simple caching behavior.
-/// </summary>
 public sealed class TestApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
         {
-            // Remove any existing ILexiconService registration (prod simulated/cached)
             var toRemove = services
                 .Where(d => d.ServiceType == typeof(ILexiconService))
                 .ToList();
@@ -40,13 +37,10 @@ public sealed class TestApplicationFactory : WebApplicationFactory<Program>
     }
 }
 
-/// <summary>
 /// Deterministic ILexiconService used for integration tests:
 /// - Returns a fixed "rich" lexicon (proves external matching).
 /// - Adds a tiny in-memory cache (per utterance).
 /// - Counts how many "external" calls were made to verify caching.
-/// NOTE: This is purposely simple. We only care about cache hits vs misses.
-/// </summary>
 internal sealed class CountingCachedTestLexiconService : ILexiconService
 {
     public static int ExternalCalls = 0;
@@ -79,12 +73,10 @@ internal sealed class CountingCachedTestLexiconService : ILexiconService
     }
 }
 
-/// <summary>
 /// Integration tests against the real HTTP pipeline (in-memory server).
 /// We verify:
 /// - External lexicon is consulted and the result is cached (2 posts -> 1 external call).
 /// - Invalid input returns HTTP 400 with a consistent error envelope.
-/// </summary>
 public sealed class SuggestTaskIntegrationTests : IClassFixture<TestApplicationFactory>
 {
     private readonly TestApplicationFactory _factory;
@@ -103,17 +95,15 @@ public sealed class SuggestTaskIntegrationTests : IClassFixture<TestApplicationF
         var client = _factory.CreateClient();
         var payload = new
         {
-            utterance = "chek order please", // will match via EXTERNAL variants
+            utterance = "chek order please", 
             userId = "u1",
             sessionId = "s1",
             timestamp = DateTime.UtcNow.ToString("o")
         };
 
-        // First call -> MISS expected
         var r1 = await client.PostAsJsonAsync("/suggestTask", payload);
         r1.EnsureSuccessStatusCode();
 
-        // Second call with the exact same utterance -> HIT expected
         var r2 = await client.PostAsJsonAsync("/suggestTask", payload);
         r2.EnsureSuccessStatusCode();
 
@@ -138,8 +128,6 @@ public sealed class SuggestTaskIntegrationTests : IClassFixture<TestApplicationF
         Assert.Contains("\"error\":\"Invalid input\"", body);
         Assert.Contains("\"traceId\"", body);
     }
-
-    // If you already had a DTO here, keep it; otherwise we don't need one for these tests.
     private sealed class ResponseDto
     {
         public string task { get; set; } = default!;

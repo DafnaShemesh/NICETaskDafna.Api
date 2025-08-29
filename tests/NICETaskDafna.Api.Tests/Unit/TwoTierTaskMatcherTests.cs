@@ -1,5 +1,3 @@
-// File: tests/NICETaskDafna.Api.Tests/Unit/TwoTierTaskMatcherTests.cs
-
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -8,22 +6,21 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Polly; // Needed for Policy.NoOpAsync / retry policies
-using Xunit; // Needed for [Fact]/[Theory]
+using Polly; 
+using Xunit; 
 
-using NICETaskDafna.Api.Matching;  // TwoTierTaskMatcher, LexiconEntry, ITaskMatcher
-using NICETaskDafna.Api.Services;  // ILexiconService
+using NICETaskDafna.Api.Matching;  
+using NICETaskDafna.Api.Services;  
 
 namespace NICETaskDafna.Api.Tests.Unit;
 
-/// <summary>
 /// Unit tests for TwoTierTaskMatcher:
 /// - Internal dictionary matches fast.
 /// - External lexicon is consulted if internal fails.
 /// - Null/empty input → "NoTaskFound".
 /// - Retry: policy retries on transient failures and eventually succeeds.
 /// - Cache: external calls should not repeat for the same utterance.
-/// </summary>
+
 public class TwoTierTaskMatcherTests
 {
     private static IAsyncPolicy<IReadOnlyList<LexiconEntry>> NoOpPolicy
