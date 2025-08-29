@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Collections.Generic; 
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,9 @@ namespace NICETaskDafna.Api.Infra;
 /// - "started" is logged at DEBUG (visible only when explicitly enabled).
 /// - "completed" summary is logged at INFORMATION (good signal-to-noise).
 /// - We do not log request/response bodies here to avoid PII leakage.
+/// - EventId constants (RequestStart/RequestCompleted/UnhandledError) to make logs queryable.
+/// - Severity by status code: 2xx=Information, 4xx=Warning, 5xx=Error.
+/// - Error path: catches unhandled exceptions, logs with EventId, rethrows.
 
 public class RequestLoggingMiddleware : IMiddleware
 {
@@ -40,30 +44,73 @@ public class RequestLoggingMiddleware : IMiddleware
         var sw = Stopwatch.StartNew();
         var req = context.Request;
 
-        // DEBUG-level "started" to help with concurrency investigations without spamming normal logs.
-        _logger.LogDebug("HTTP {Method} {Path} started", req.Method, req.Path);
+        _logger.LogDebug(LogEvents.RequestStart, 
+            "HTTP {Method} {Path} started",
+            req.Method, req.Path);
 
         try
         {
             await next(context);
         }
-        finally
+        catch (Exception ex) 
         {
             sw.Stop();
-            var res = context.Response;
+            _logger.LogError(LogEvents.UnhandledException, ex,
+                "HTTP {Method} {Path} failed with 500 in {ElapsedMs} ms UA={UserAgent} IP={RemoteIp}",
+                req.Method,
+                req.Path,
+                sw.ElapsedMilliseconds,
+                req.Headers.UserAgent.ToString(),
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown");
 
-            // INFORMATION-level "completed" summarizing the request outcome.
-            _logger.LogInformation(
+            throw; 
+        }
+        finally
+        {
+            if (sw.IsRunning) sw.Stop();
+        }
+
+        var res = context.Response;
+
+        //"completed" summarizing the request outcome.
+        var status = res.StatusCode;
+        var length = res.ContentLength ?? 0L;
+
+        if (status >= 500)
+        {
+            _logger.LogError(LogEvents.RequestCompleted,
                 "HTTP {Method} {Path} completed {StatusCode} in {ElapsedMs} ms {Length}B UA={UserAgent} IP={RemoteIp}",
                 req.Method,
                 req.Path,
-                res.StatusCode,
+                status,
                 sw.ElapsedMilliseconds,
-                res.ContentLength ?? 0,
+                length,
                 req.Headers.UserAgent.ToString(),
-                context.Connection.RemoteIpAddress?.ToString()
-            );
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        }
+        else if (status >= 400)
+        {
+            _logger.LogWarning(LogEvents.RequestCompleted,
+                "HTTP {Method} {Path} completed {StatusCode} in {ElapsedMs} ms {Length}B UA={UserAgent} IP={RemoteIp}",
+                req.Method,
+                req.Path,
+                status,
+                sw.ElapsedMilliseconds,
+                length,
+                req.Headers.UserAgent.ToString(),
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        }
+        else
+        {
+            _logger.LogInformation(LogEvents.RequestCompleted,
+                "HTTP {Method} {Path} completed {StatusCode} in {ElapsedMs} ms {Length}B UA={UserAgent} IP={RemoteIp}",
+                req.Method,
+                req.Path,
+                status,
+                sw.ElapsedMilliseconds,
+                length,
+                req.Headers.UserAgent.ToString(),
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown");
         }
     }
 }
-

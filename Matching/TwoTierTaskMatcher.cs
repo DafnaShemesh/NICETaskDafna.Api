@@ -1,26 +1,23 @@
-// File: Matching/TwoTierTaskMatcher.cs
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using NICETaskDafna.Api.Infra;     // <- for RetryPolicies
-using NICETaskDafna.Api.Services;  // <- ILexiconService
+using NICETaskDafna.Api.Infra;     
+using NICETaskDafna.Api.Services;  
 using Polly;
 
 namespace NICETaskDafna.Api.Matching;
 
-/// <summary>
 /// Two-tier matching strategy:
-/// 1) Try the INTERNAL moderately-expanded map (fast, always available).
-/// 2) If not found, query the EXTERNAL rich lexicon (Polly: timeout + retry + fallback + cache).
+/// 1) Try the INTERNAL minimal map (fast, always available).
+/// 2) If not found, query the EXTERNAL rich lexicon (polly+cache)
 /// If neither yields a match, return "NoTaskFound".
-/// </summary>
+
 public sealed class TwoTierTaskMatcher : ITaskMatcher
 {
     private readonly ILogger<TwoTierTaskMatcher> _logger;
-    private readonly ILexiconService _external;   // resolved via DI (implementation = CachedLexiconService)
+    private readonly ILexiconService _external;  
     private readonly IAsyncPolicy<IReadOnlyList<LexiconEntry>> _policy;
 
-    // Internal moderately-expanded map (normalized on the fly)
     private static readonly (string Key, string Task)[] InternalMap =
     {
         // Password (expanded but not too much)
@@ -45,18 +42,21 @@ public sealed class TwoTierTaskMatcher : ITaskMatcher
 
     public TwoTierTaskMatcher(
         ILogger<TwoTierTaskMatcher> logger,
-        ILexiconService external, // DI will provide CachedLexiconService as ILexiconService
+        ILexiconService external, 
         IAsyncPolicy<IReadOnlyList<LexiconEntry>>? policy = null)
     {
-        _logger  = logger;
+        _logger   = logger;
         _external = external;
-        _policy   = policy ?? RetryPolicies.CreateLexiconPolicy(_logger); // <-- pass logger (signature expects it)
+        _policy   = policy ?? RetryPolicies.CreateLexiconPolicy(_logger); 
     }
 
     public string Match(string utterance)
     {
         if (string.IsNullOrWhiteSpace(utterance))
+        {
+            _logger.LogInformation(LogEvents.NoMatch, "Empty utterance -> NoTaskFound");
             return "NoTaskFound";
+        }
 
         var norm = TextNormalizer.Normalize(utterance);
         _logger.LogDebug("Normalized utterance: {Normalized}", norm);
@@ -67,7 +67,8 @@ public sealed class TwoTierTaskMatcher : ITaskMatcher
             var k = TextNormalizer.Normalize(key);
             if (norm.Contains(k))
             {
-                _logger.LogInformation("Matched via INTERNAL map: {Task} (key='{Key}')", task, key);
+                _logger.LogInformation(LogEvents.MatchFoundInternal,
+                    "Matched via INTERNAL map: {Task} (key='{Key}')", task, key);
                 return task;
             }
         }
@@ -81,18 +82,19 @@ public sealed class TwoTierTaskMatcher : ITaskMatcher
 
         foreach (var entry in externalLex)
         {
-            // provider already normalizes; normalize defensively anyway
             foreach (var phrase in entry.Phrases)
             {
                 var p = TextNormalizer.Normalize(phrase);
                 if (norm.Contains(p))
                 {
-                    _logger.LogInformation("Matched via EXTERNAL lexicon: {Task} (phrase='{Phrase}')", entry.Task, phrase);
+                    _logger.LogInformation(LogEvents.MatchFoundExternal,
+                        "Matched via EXTERNAL lexicon: {Task} (phrase='{Phrase}')", entry.Task, phrase);
                     return entry.Task;
                 }
             }
         }
 
+        _logger.LogInformation(LogEvents.NoMatch, "No match found for utterance");
         return "NoTaskFound";
     }
 }

@@ -1,4 +1,3 @@
-// File: Infra/RetryPolicies.cs
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,19 +9,16 @@ using Polly.Timeout;
 
 namespace NICETaskDafna.Api.Infra;
 
-/// <summary>
 /// Resiliency policies for the external lexicon:
 /// - Per-attempt timeout (1s)
 /// - Jittered backoff retry (3 tries) with logging on each attempt
 /// - Typed fallback: returns an EMPTY lexicon on final failure (no exception bubbles up)
-///
 /// Order matters: fallback(retry(timeout()))
-/// </summary>
+
 public static class RetryPolicies
 {
     public static IAsyncPolicy<IReadOnlyList<LexiconEntry>> CreateLexiconPolicy(ILogger logger)
     {
-        // Backoff with jitter (spreads load and avoids thundering herd).
         var delays = Backoff.DecorrelatedJitterBackoffV2(
             medianFirstRetryDelay: TimeSpan.FromMilliseconds(150),
             retryCount: 3);
@@ -33,12 +29,11 @@ public static class RetryPolicies
         // 2) Retry on transient failures; log each failed attempt with its delay
         var retry = Policy<IReadOnlyList<LexiconEntry>>
             .Handle<HttpRequestException>()
-            .Or<TaskCanceledException>() // includes timeout cancellations
+            .Or<TaskCanceledException>() 
             .WaitAndRetryAsync(
                 delays,
                 onRetry: (outcome, delay, attempt, ctx) =>
                 {
-                    // outcome is DelegateResult<IReadOnlyList<LexiconEntry>>
                     var msg = outcome.Exception?.Message ?? "non-exception outcome";
                     logger.LogWarning(
                         "External lexicon attempt {Attempt} failed: {Message}. Retrying in {Delay}...",
@@ -58,7 +53,6 @@ public static class RetryPolicies
                     return Task.CompletedTask;
                 });
 
-        // Outer → Inner: fallback(retry(timeout()))
         return Policy.WrapAsync(fallback, retry, timeout);
     }
 }

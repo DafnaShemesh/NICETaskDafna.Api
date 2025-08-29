@@ -5,11 +5,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <!-- VERY IMPORTANT: exclude test sources from the API build,
-       because tests/ sits under the project root. -->
   <ItemGroup>
     <Compile Remove="tests\**\*.cs" />
-    <None Include="tests\**\*.*" ExcludeFromSingleFile="true" />
+    <None    Remove="tests\**\*.*" />
+    <Content Remove="tests\**\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
