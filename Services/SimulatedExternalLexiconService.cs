@@ -1,4 +1,6 @@
-using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Text.RegularExpressions;
 using NICETaskDafna.Api.Matching;
 
 namespace NICETaskDafna.Api.Services;
@@ -7,10 +9,9 @@ namespace NICETaskDafna.Api.Services;
 /// - Returns a richer set of phrases per task (core + colloquial + common typos).
 /// - Randomly fails (~30%) to emulate transient upstream issues (for Retry/Cache demo).
 /// Notes:
-/// - I explicitly include the four "core" keys required by the assignment.
-/// - I add real-world variants and frequent misspellings so extended matching
-/// - Every phrase is normalized (lowercased, diacritics stripped, whitespace collapsed)
-
+/// - Explicitly includes the four "core" keys required by the assignment.
+/// - Adds real-world variants and frequent misspellings for extended matching.
+/// - Every phrase is normalized (lowercased, diacritics stripped, whitespace collapsed).
 public sealed class SimulatedExternalLexiconService : ILexiconService
 {
     private static readonly Random Rng = new();
@@ -37,27 +38,37 @@ public sealed class SimulatedExternalLexiconService : ILexiconService
             "reset my pass",
             "recover my account",
             "account recovery",
-            "cant login to my account",   
+            "cant login to my account",
             "can't log in to my account",
             "cant log into my account",
             "can't log into my account",
+            "i need help resetting my password",
             "pass code",
-            "passcode"
+            "passcode",
+            "i can't access my account",
+            "help me with my password",
+            "my password doesn't work",
+            "problem with my password",
+            "need new password",
+            "update password",
+            "fix my password",
+            "lost password",
+            "forgot my login details"
         };
 
-        // Common misspellings 
+        // Common misspellings:
         var resetTypos = new[]
         {
-            "reser password",       // missing 't'
-            "rest password",        // dropped 'e'
-            "reset pasword",        // missing 's'
-            "reset passwrod",       // transposed 'r'/'o'
-            "forgor password",      // meme/typo for "forgot"
+            "reser password",        // missing 't'
+            "rest password",         // dropped 'e'
+            "reset pasword",         // missing 's'
+            "reset passwrod",        // transposed 'r'/'o'
+            "forgor password",       // meme/typo for "forgot"
             "forgot pasword",
             "forgot passwrod",
-            "i fogrot my password", // swapped letters
-            "pssword reset",        // missing 'a'
-            "pass codee"            // extra letter
+            "i fogrot my password",  // swapped letters
+            "pssword reset",         // missing 'a'
+            "pass codee"             // extra letter
         };
 
         // Core keys (must be present per the assignment):
@@ -79,29 +90,40 @@ public sealed class SimulatedExternalLexiconService : ILexiconService
             "parcel",
             "track shipment",
             "where is my shipment",
-            "tracking number"
+            "tracking number",
+            "follow my order",
+            "order tracking",
+            "status of my delivery",
+            "has my order shipped",
+            "is my package delivered",
+            "track delivery",
+            "locate my parcel",
+            "check shipping",
+            "update on my order",
+            "track my delivery",
+            "follow shipment"
         };
 
-        // Common misspellings 
+        // Common misspellings:
         var orderTypos = new[]
         {
             // "check order" typos
-            "chek order",           // missing 'c'
-            "check oder",           // missing 'r'
-            "chcek order",          // letters swapped
+            "chek order",            // missing 'c'
+            "check oder",            // missing 'r'
+            "chcek order",           // letters swapped
             // "track order" typos
-            "trak order",           // missing 'c'
-            "trakc order",          // swapped 'c'/'k'
-            "tarck order",          // swapped 'a'/'r'
-            "track orde",           // missing 'r'
+            "trak order",            // missing 'c'
+            "trakc order",           // swapped 'c'/'k'
+            "tarck order",           // swapped 'a'/'r'
+            "track orde",            // missing 'r'
             // package/shipping/delivery typos
-            "track pacakge",        // swapped 'a'/'k'
-            "pakage status",        // missing 'c'
-            "shiping status",       // missing 'p'
-            "delivary status",      // a/e swap
-            "parsel",               // 'sel' vs 'cel'
-            "traking number",       // missing 'c'
-            "where is my shipmet"   // missing 'n'
+            "track pacakge",         // swapped 'a'/'k'
+            "pakage status",         // missing 'c'
+            "shiping status",        // missing 'p'
+            "delivary status",       // a/e swap
+            "parsel",                // 'sel' vs 'cel'
+            "traking number",        // missing 'c'
+            "where is my shipmet"    // missing 'n'
         };
 
         // Build normalized, de-duplicated lists per task:

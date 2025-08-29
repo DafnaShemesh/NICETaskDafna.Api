@@ -24,7 +24,7 @@ From there you can:
    ```json
    {
      "utterance": "I forgot my password",
-     "userId": "u1",
-     "sessionId": "s1",
+     "userId": "12345",
+     "sessionId": "abc-678",
      "timestamp": "2025-08-21T12:00:00Z"
    }
