@@ -13,10 +13,8 @@ From the repo root:
 dotnet test .\tests\NICETaskDafna.Api.Tests\NICETaskDafna.Api.Tests.csproj --logger "console;verbosity=detailed"
 
 
-##Run API: 
-The console will print the listening URL (e.g. http://localhost:5196).  
 ### Swagger UI
-Once the API is running, open Swagger in your browser at:  
+Once the API is running, The console will print the listening URL (e.g. http://localhost:5196).  Then open Swagger in your browser at:  
 http://localhost:<port>/swagger
 
 From there you can:
